@@ -446,6 +446,11 @@ alter table gsop_grid_user_info add index idx_dsf3fsdfsd(user_id,user_name,user_
 
 11. 表连接时，尽量不要超过三张表（阿里规范），需要join时，字段类型必须一致。
 
+12. in or exists  
+
+    * in  确定给定的值是否与子查询或列表中的值相匹配。in在查询的时候，首先查询子查询的表，然后将内表和外表做一个笛卡尔积，然后按照条件进行筛选。所以相对内表比较小的时候，in的速度较快。
+    * exists  使用exists关键字进行查询的时候，首先，我们先查询的不是子查询的内容，而是查我们的主查询的表，也就是说，我们先执行的sql语句是：然后，根据表的每一条记录，执行以下语句，依次去判断where后面的条件是否成立
+
 
 
 ### 八、对比InnoDB与Mylsam引擎
