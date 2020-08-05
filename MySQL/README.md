@@ -2,10 +2,43 @@
 
 之前在项目中使用的一直是Oracle，没办法，客户侧比较有钱，都是直接上的Oracle一体机，定期还会找工程师还维护。但是最近打算跳槽换公司了，现在外面公司用的MySQL比较多，几乎所有的面试都会问到MySQL，今天来试试MySQL的使用。
 
-
 ### 一、安装
 
-先略过去，机子上已经装过了，下次装的时候补上。
+#### 1.Windows
+
+先下载免安装的硬盘版，解压，在解压目录下创建data目录
+
+1. 进入bin目录输入:
+
+   ```
+   mysqld --install mysql8
+   ```
+
+2. 安装完后开始初始化：
+
+   ```
+   mysqld --initialize --console
+   ```
+
+   > 注意搭建的时候输出的初始化密码；如果丢失初始化密码的话，删掉Data目录，重新执行步骤2
+
+3. 开启服务
+
+   ```
+   net start mysql8
+   ```
+
+4. 登录
+
+   ```
+   mysql -hlocalhost -uroot -p{初始密码}
+   ```
+
+5. 修改初始密码
+
+   ```
+   ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '123456';
+   ```
 
 ***
 
@@ -166,7 +199,7 @@ select from_unixtime(1596273904,'%Y-%d-%d %H:%i:%s');
 
 ### 五、MySQL中的事务隔离
 
-#### 一、事务的基本要素（ACID）
+#### 1、事务的基本要素（ACID）
 
 　　1、原子性（Atomicity）：事务开始后所有操作，要么全部做完，要么全部不做，不可能停滞在中间环节。事务执行过程中出错，会回滚到事务开始前的状态，所有的操作就像没有发生一样。也就是说事务是一个不可分割的整体，就像化学中学过的原子，是物质构成的基本单位。
 
@@ -176,7 +209,7 @@ select from_unixtime(1596273904,'%Y-%d-%d %H:%i:%s');
 
 　　 4、持久性（Durability）：事务完成后，事务对数据库的所有更新将被保存到数据库，不能回滚。
 
-#### 二、事务的并发问题
+#### 2、事务的并发问题
 
 参考[金融业务系统中的事务问题](https://www.cnblogs.com/zhouwei0213/archive/2013/03/30/2991065.html)
 
@@ -214,7 +247,7 @@ select from_unixtime(1596273904,'%Y-%d-%d %H:%i:%s');
 
 > **小结：不可重复读的和幻读很容易混淆，不可重复读侧重于修改，幻读侧重于新增或删除。解决不可重复读的问题只需锁住满足条件的行，解决幻读需要锁表**
 
-#### 三、MySQL的事务隔离级别
+#### 3、MySQL的事务隔离级别
 
 注意，在oralce中，只提供了两种事务隔离级别，Read Committed和Serializable级别，默认是前者。而MySQL提供了四种隔离级别，模式人Repeatable Read。
 
@@ -261,6 +294,12 @@ mysql串行化使用的是行级锁。当一个串行化事务中，使用select
 >   * insert into table_a select * from table_b  ；   这个句子，后面的table_b后一定要带主键限制条件，否则不带条件或带了没有使用索引的限制条件，都是导致table b 被锁表！！！
 
 
+
+#### 4、MySQL默认
+
+MySQL默认的事务隔离级别是可重复读，这是因为在MySQL5.1版本之前，READ COMMITED级别在主从复制下会有BUG。
+
+现在一般在项目中，会将默认隔离级别调至 Read Committed，对标Oracle。
 
 ### 六、InnoDB锁
 
