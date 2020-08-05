@@ -489,6 +489,8 @@ alter table gsop_grid_user_info add index idx_dsf3fsdfsd(user_id,user_name,user_
 
     * in  确定给定的值是否与子查询或列表中的值相匹配。in在查询的时候，首先查询子查询的表，然后将内表和外表做一个笛卡尔积，然后按照条件进行筛选。所以相对内表比较小的时候，in的速度较快。
     * exists  使用exists关键字进行查询的时候，首先，我们先查询的不是子查询的内容，而是查我们的主查询的表，也就是说，我们先执行的sql语句是：然后，根据表的每一条记录，执行以下语句，依次去判断where后面的条件是否成立
+    
+13. 分页查询时一般用limit语句；注意一个优化的点：可以通过子查询利用索引确定偏移量的位置，然后再父查询通过 >= limit关键字实现分页。
 
 
 
@@ -506,3 +508,56 @@ MySQL在底层存储数据时，支持不同的存储方式，底层实现与相
 * CSV     以csv格式进行存储，不支持事务，但可以直接以csv文件的格式进行编辑，适合作为数据交换的中间表。
 * InnoDB   最常用的引擎，对锁，事务有很好的支持，理解为一个传统的关系型数据库。
 
+### 九、MySQL特殊关键字
+
+#### 1.Limit
+
+使用limit关键字，可以限制SQL返回的结果集数量，有点类似于Oracle中的 rownum，但是比其更强大，支持位移，可以用来实现分页，语法如下：
+
+```sql
+SELECT * FROM table LIMIT {num1} OFFSET {num2};
+```
+
+上面这一行可以理解为，从返回结果集的 NUM2行开始（包括），获取num1 条数据。
+
+OFFSET理解为数组的OFFSET即可（从0行开始）。
+
+上面这种写法也可以简化为：
+
+```sql
+select * from table limit num2,num1;
+```
+
+一个意思。
+
+##### 2.Auto_increment
+
+可以使得主键自增，限制条件是字段必须是int类型。
+
+```sql
+create table test(
+    st_id   int primary key auto_increment,    //指定自增
+    name varchar(100)
+) engine =INNODB auto_increment = 100;    // 指定初始值
+```
+
+主键自增后，你也可以insert时为对应列指定新的值！ 但是这种做法强烈不推荐。
+
+正常做法应该时，对于自增长的列，sql中那一列为null，即可，eg：
+
+```sql
+insert into test  value ( null,'fefe');   // 正确
+insert into test  value ( 99,'fefe');     // 异常
+```
+
+### 十、数据准备
+
+MySQL官网提供了专门用来测试的数据集，github[链接](https://github.com/datacharmer/test_db)
+
+下载好，解压后，cd到对应目录，然后执行以下命令：
+
+```
+mysql -uroot -p123456 <employees.sql
+```
+
+数据就导入进你的测试库啦!
