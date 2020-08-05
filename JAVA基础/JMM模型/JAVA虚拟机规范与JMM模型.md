@@ -139,7 +139,7 @@ public class Student{
 
 #### 5.计算机硬件内存模型
 
-![img](C:\Users\53157\AppData\Local\YNote\data\weixinobU7Vjqc5-dd_939jxYwW9Ku3i3c\5bcb4c9046434de2bfcb3ed40b400268\clipboard.png)
+![img](./images/3.png)
 
 ##### 寄存器（cpu registers）
 
@@ -161,7 +161,7 @@ public class Student{
 
 #### 6.JAVA内存模型与计算机硬件模型的关系
 
-![img](C:\Users\53157\AppData\Local\YNote\data\weixinobU7Vjqc5-dd_939jxYwW9Ku3i3c\7bf7fd98eac64250bac1763a6595f40d\clipboard.png)
+<img src="./images/4.png" alt="img" style="zoom:200%;" />
 
 从硬件的角度上来看，线程栈、堆都是存在于计算机主存上的。而线程栈和堆中的部分内容可能在某个时间节点上出现在cpu缓存或cpu寄存器中，而这种方式可能会引发一系列问题，最主要的问题有两点：
 
@@ -174,7 +174,7 @@ public class Student{
 
 想象一下，一个共享变量A起初存储在主存当中。一个运行在cpu1中的从主存中读取变量A到它的cpu缓存中，然后cpu1对这个共享变量作出了修改。只要变量A在cpu1 的缓存中的最新值还未被刷新到主存中，运行在其他cpu中的线程就无法获取到变量A的最新状态。这样的话，处于不同cpu中的多个线程最终可能对变量A都持有不同的副本。如下图所示：
 
-![img](C:\Users\53157\AppData\Local\YNote\data\weixinobU7Vjqc5-dd_939jxYwW9Ku3i3c\0ff1a1d863434df6b8781900d8892dbb\clipboard.png)
+![img](./images/5.png)
 
 解决办法是使用java中的关键字 volatile，这个关键字可以保证一个变量总是从主存中读取，当变量更新后立刻被刷新到主存当中。
 
@@ -186,6 +186,6 @@ public class Student{
 
 想象一下，如果分别处于CPU1、CPU2中两个线程A、B，同时从主存中读取变量var=1到各自的cpu缓存中；然后各自将变量++1；那么无论cpu1、cpu2将变量值刷回主存的先后顺序，主存中变量var的值最终都为2。如下图：
 
-![img](C:\Users\53157\AppData\Local\YNote\data\weixinobU7Vjqc5-dd_939jxYwW9Ku3i3c\ec90b366182f48d0bf5a57c6f192f645\clipboard.png)
+![img](./images/6.png)
 
 解决办法是使用java的同步锁。同步锁保证了在任何时刻只有一个线程能访问指定的变量；并且保证了在同步代码块中，所有的变量，无论是否被volatile声明，都会从主存中读取，当退出同步代码块时，变量的值会被刷回到主存当中。
