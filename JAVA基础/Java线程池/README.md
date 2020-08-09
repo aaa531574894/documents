@@ -58,3 +58,9 @@ ExecutorService中的 submit() 的各个重载方法底层都是通过其execute
 
 * FutureTask是RunnableFuture的实现类。提供了任务启动，取消，获取执行结果的能力。它可以接收Ruunable，Callable对象；如果是Ruunable对象，会封装为一个返回值为Void类型的callable对象。
   ThreadPoolExecutor内部的submit() 方法将传入的参数都封装为了FutureTask对象，然后再调用execute方法去执行。
+
+
+
+#### 附：线程池脑图
+
+![线程池，看不到请翻墙](./1.png)
