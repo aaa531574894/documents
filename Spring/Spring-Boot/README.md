@@ -1,4 +1,4 @@
-###  SpringBoot应用的启动过程
+###  1.SpringBoot应用的启动过程
 
 
 
@@ -40,4 +40,14 @@ spring boot是如何完成对sping的封装，实现可插拔的stater模式的�
 * @Import 注解 与@DefferedImportSelector注解
 
 基本上，知道了这些个类及其作用，SpringBoot的启动流程也就知道的差不多了。
+
+
+
+### 2.问题
+
+#### 1.SpringBoot是如何完成自动装配的
+
+SpringBoot的自动装配是结合Spring BeanFactory的生命周期来实现的。
+
+BeanFactory的生命周期包括
 

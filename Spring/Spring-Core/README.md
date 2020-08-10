@@ -98,7 +98,7 @@ public @interface PostConstruct {
 }
 ```
 
-##### 2.**BeanFactoryPostProcessor**
+##### 2.DisposableBean
 
 在bean 摧毁时回调
 
@@ -200,7 +200,7 @@ public interface BeanPostProcessor {
 
 
 
-##### 5.BeanFactoryPostProcess
+##### 5.BeanFactoryPostProcesor
 
 ```java
 public interface BeanFactoryPostProcessor {
@@ -414,18 +414,15 @@ public @interface Resource {
 
 - Resource注解提供了两种匹配方式：
 
-- - name 注入，  resource注解中的name属性default to ""，
+  * name 注入，  resource注解中的name属性default to ""，
+    * 如果手动指定的话，spring会根据此name去寻找对应的bean，注入失败会报错；（如果注入失败的话，不会再根据type进行一次注入，会直接报错）
+    * 如果不指定，（如果注入失败的话会再根据type进行一次注入）
+    * 如果注解应用于字段，spring会将字段解析为beanName，再去查找；
+    * 注解于setter方法时，spring会将setter方法对应的propertiy name 接续出来，再根据name去查找对应的bean。 
 
-  - - 如果手动指定的话，spring会根据此name去寻找对应的bean，注入失败会报错；（如果注入失败的话，不会再根据type进行一次注入，会直接报错）
+  - type 注入，即指定Class，由spring完成注入。
+    * 找不到或找到多个，都会报错
 
-    - 如果不指定，（如果注入失败的话会再根据type进行一次注入）
-
-    - - 如果注解应用于字段，spring会将字段解析为beanName，再去查找；
-      - 注解于setter方法时，spring会将setter方法对应的propertiy name 接续出来，再根据name去查找对应的bean。 
-
-  -  type 注入，即指定Class，由spring完成注入。
-
-  - - 找不到或找到多个，都会报错
 
  2、作用域不同
 
