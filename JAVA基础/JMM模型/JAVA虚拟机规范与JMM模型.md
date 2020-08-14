@@ -490,21 +490,57 @@ G1回收器接收一个最大STW时长的任务指标，并会努力控制每次
 
   * help     可查看命令帮助文档
   * jad {全限定类名}   反编译指定类，可查看生产环境源代码是否有版本差异。
-  * heapdump   可以输出内存dump文件
-  
+  * heapdump   可以输出内存dump文件，
+    * `heapdump /tmp/dump.hprof`  dump到指定路径  回头可以用jvisualvm查看堆内存信息
+
+  * stop   退出时不要直接exit，调用stop命令
+  * dashboard   查看线程运行状态，内存运行状态
+  * thread   不带线程号时输出所有线程信息，后面加线程号时输出线程的方法栈信息
+  * grep  和linux的grep类似
+  * jvm   查看当前线程运行的jvm信息
+
 * Jconsole （测试环境）
 
 * Jdk自带命令：
 
   * jps  列出有哪些java 进程
 
-  * jinfo pid   列出java进程的一些详细信息
+  * jinfo 
 
-  * jmap      `jmap -histo {pId} | head -20`   //根据对象占用空间大小的逆序输出  
+    * `jinfo  pid`   列出java进程的一些详细信息，甚至可以动态的改变一些jvm的配置
 
+    * `jinfo -flag  {参数} {pid}`   查看某线程参数配置的参数值
+
+       eg1: `jinfo -flag PrintGCDetails 16035 `  //查看进程是否输出了垃圾清理日志
+  
+       eg2:`jinfo -flag +PrintGCDetails 16035 `  //开启垃圾回收日志
+  
+  * jmap      
+  
+    * `jmap -histo {pId} | head -20`   //根据对象占用空间大小的逆序输出  
+  
     > 注：此命令线上谨慎使用！因为这个命令会耗时很久，对进程造成严重影响。
-
+  
+    * `jmap -heap {pid}`    //输出堆内存的分配以及占用信息  耗时不久,可以使用
+  
   * jstack {pid}    列出所有线程的栈调用信息
+  
+  * jstate  jstat命令可以查看堆内存各部分的使用量，以及加载类的数量
+  
+    * `jstat -gcutil {Pid}`  查看某进程启动以来的垃圾回收统计信息 
+  
+    * `jstat -gcutil {pid} 2s` 以2s的频率观察 pid的垃圾回收情况 
+  
+      ```
+      对输出的参数解析:
+      YGC：年轻代垃圾回收次数
+      YGCT：年轻代垃圾回收消耗时间
+      FGC：老年代垃圾回收次数
+      FGCT：老年代垃圾回收消耗时间
+      GCT：垃圾回收消耗总时间
+      ```
+  
+      
 
 
 
@@ -587,7 +623,7 @@ jdk<=1.7之前，永久代是堆内内存；但从jdk1.8起，永久区的概念
 | -XX:+PrintFlagsFinal            | 输出可选的XX参数                                             |
 | -Xmx2048m                       | 最大堆大小                                                   |
 | -Xms2048m                       | 初始堆大小                                                   |
-| -Xmn1024m                       | 年轻代大小                                                   |
+| -Xmn1024m                       | 新生代大小                                                   |
 | -Xss512k                        | 每个线程栈大小，JDK5.0以后每个线程堆栈大小为1M               |
 | -XX:SurvivorRatio=8             | Eden区与Survivor区的大小比值，设置为8,则两个Survivor区与一个Eden区的比值为2:8<br />,一个Survivor区占整个年轻代的1/10 |
 | -XX:+UseG1GC                    | 使用 G1 (Garbage First) 垃圾收集器                           |
@@ -596,9 +632,13 @@ jdk<=1.7之前，永久代是堆内内存；但从jdk1.8起，永久区的概念
 | -Duser.timezone=GMT+8           | 设定GMT区域，避免CentOS坑爹的时区设置                        |
 | -XX:+HeapDumpOnOutOfMemoryError | OOM时导出堆到文件                                            |
 | -XX:HeapDumpPath=d:/a.dump      | 导出OOM的路径                                                |
+| **GC相关**                      |                                                              |
+| -XX:+PrintGC                    | 打印GC日志                                                   |
 | -XX:+PrintGCDetails             | 打印GC详细信息                                               |
 | -XX:+PrintGCTimeStamps          | 打印CG发生的时间戳                                           |
-|                                 |                                                              |
+| -XX:+PrintGCDateStamps          | 输出GC的时间戳（以日期的形式，如 2013-05-04T21:53:59.234+0800） |
+| -XX:+PrintHeapAtGC              | 在进行GC的前后打印出堆的信息                                 |
+| -Xloggc                         | 日志文件的输出路径                                           |
 
 ##### 3.使用例子
 
