@@ -317,6 +317,142 @@ public class Student{
 
 
 
+##### 指令重排序
+
+> 参考 jenkov大神的[博客](http://tutorials.jenkov.com/java-concurrency/java-happens-before-guarantee.html)
+
+如果同一个方法内的几条CPU指令彼此不依赖，则现代CPU可以并行执行指令。例如，以下两条指令互不依赖，因此可以并行执行：
+
+```
+a = b + c
+d = e + f
+```
+
+但是这两条却不行：
+
+```
+a = b + c
+d = a + e
+```
+
+
+
+假设有如下一堆指令
+
+```
+a = b + c
+d = a + e
+
+l = m + n
+y = x + z
+```
+
+那么重排序后可能为：
+
+```
+a = b + c
+
+l = m + n
+y = x + z
+
+d = a + e
+```
+
+然后CPU可以并行执行至少前3条指令，一旦第一条指令完成，它就可以开始执行第4条指令。
+
+>  只要程序的语义没有改变，Java VM和CPU就允许指令重新排序。最终结果必须与指令按照源代码中列出的顺序执行相同。
+
+
+
+多核CPU中，指令重排序会出现一些问题，以一个非常典型的绘制线程为例：
+
+题目：
+
+想象一下，两个线程相互协作以最快的速度在屏幕上绘制frame（图像帧）。一个生产线程生成图像帧，另一个绘制线程在屏幕上绘制frame。两个线程需要通过某种通信机制交换frame，帧生产线程以最快的速度生产frame。帧绘制线程尽可能的在屏幕上绘制frame。有时，生产线程可能会在绘图线程有时间绘制之前生成2个帧。在这种情况下，只应该绘制最新的frame，即所谓的丢帧，我们不希望绘图线程落后于生产线程。如果在绘制前一个frame之前，生产者线程已经准备好了一个新frame，那么只需用新frame覆盖前一个frame。换句话说，前一frame被“删除”。有时，在生产线程还未生产出新frame之前，绘制线程线可能已绘制好frame并准备绘制新frame。在这种情况下，我们希望绘制线程等待新frame。没有理由浪费CPU和GPU资源，重新绘制完全相同的frame，屏幕图像不会因此而改变，用户也不会看到任何新的东西。
+
+代码如下：
+
+```java
+public class FrameExchanger  {
+
+    private long framesStoredCount = 0:
+    private long framesTakenCount  = 0;
+
+    private boolean hasNewFrame = false;
+
+    private Frame frame = null;
+
+        // called by Frame producing thread
+    public void storeFrame(Frame frame) {
+        this.frame = frame;
+        this.framesStoredCount++;
+        this.hasNewFrame = true;
+    }
+
+        // called by Frame drawing thread
+    public Frame takeFrame() {
+        while( !hasNewFrame) {
+            //busy wait until new frame arrives
+        }
+
+        Frame newFrame = this.frame;
+        this.framesTakenCount++;
+        this.hasNewFrame = false;
+        return newFrame;
+    }
+
+}
+```
+
+注意storeFrame方法中的三条指令，因为这几条指令互不依赖，所以对JVM或者CPU来说，他是可以被指令重排序的，所以重排序后的执行代码可能如下：
+
+```java
+    public void storeFrame(Frame frame) {
+        this.hasNewFrame = true;
+        this.framesStoredCount++;
+        this.frame = frame;
+    }
+```
+
+当hasNewFrame被设置为true，但是新的frame引用还未赋值时，绘图线程就会绘制出旧的frame。显然，在这种特殊情况下，重画旧框架不会导致应用程序崩溃或故障。它只是浪费CPU和GPU资源。但是，在其他情况下，这种指令重新排序可能导致应用程序故障。
+
+
+
+##### Happens Before Guarantee
+
+java对volatile和synchronized关键字的happens before支持是怎样的呢？
+
+1. volatile 读线程可见性：volatile关键字保证了volatile变量指令
+
+1. volatile 写原则：
+
+   一个方法内，对volatile做写操作的指令之前的所有指令，是可以重排序的，但是必须在volatile指令之前重排序。
+
+   > A write to a non-volatile or volatile variable that happens before a write to a volatile variable is guaranteed to happen before the write to that volatile variable.
+
+2. volatile 读原则：
+
+   一个方法内，对volatile变量做读操作的指令之后的所有指令，是可以重排序的，但是必须在volatile变量被读的这条指令之后重排序。
+
+   > A read of a volatile variable will happen before any subsequent reads of volatile and non-volatile variables.
+
+3. synchronized 可见性保证：
+
+   * 当进入synchronized 块代码时，当前线程可见的所有变量都会从主存中重新读取。
+   * 当线程离开synchronized 块代码时，当前线程可见的所有变量都会同步至主存当中。
+
+4. synchronized  beginning  happens before guarantee
+
+   sync代码块前后的代码会建立内存屏障，指令重排序不会跨过这条内存屏障。
+
+
+
+
+
+
+
+
+
 #### 7.Java 内存回收
 
 >  参考:

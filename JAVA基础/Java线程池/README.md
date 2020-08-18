@@ -38,20 +38,25 @@ jdk的线程池工具类Executors为我们提供了以下几种常用的线程�
 
 ExecutorService中的 submit() 的各个重载方法底层都是通过其execute()方法实现的（通过FutureTask封装了Runable）。  
 
-当通过线程池的 execute() 方法提交一个Runnable对象时，线程池会根据线程池的类型、配置参数进行判断，创建新线程或将任务加入到阻塞的任务队列中。  
+当通过线程池的 execute() 方法提交一个Runnable对象时，线程池会根据线程池的类型、配置参数进行判断，创建新线程或将任务加入到阻塞的任务队列中。
 
-#### 3.为什么Thread这个类只能执行一次，但线程池中的线程却一直在执行不同的任务？  
+#### 3.ForkJoinPool
+
+  
+
+#### 4.为什么Thread这个类只能执行一次，但线程池中的线程却一直在执行不同的任务？  
 
 看了下ThreadPoolExecutor的原码，他是这样做的，线程池中维护的是一个Worker Set。Worker类实现了Runnable接口，内部又持有了一个firstTask与thread。
 当第Worker初始化时，会从ThreadFactory中获取一个新的线程，将this Worker作为runnable对象传给新new出来的thread，然后将firstTask指针指向真正要执行的任务。
 然后调用thread.start()开始运行线程，线程会执行firstTask；执行结束后，线程并不会终止，而是循环的从阻塞的任务队列中获取新的任务，这样就保证了线程池中的线程可以重复使用，减少了创建线程时的开销。    
 
-#### 4.Runnable、Callable、Future、RuunableFuture、FutureTask的区别与联系。  
+#### 5.Runnable、Callable、Future、RuunableFuture、FutureTask的区别与联系。  
 
-* Runnable、Callable 都是一个可执行的任务接口；区别在于，Runnable没有返回值，不能抛出Checked Exception；而Callable有返回值，且能抛出Checked Exception。  
-
+* Runnable、Callable 都是一个可执行的任务接口；区别在于，
+  * Runnable没有返回值，不能抛出Checked Exception；
+  * 而Callable有返回值，且能抛出Checked Exception。  
+  * Runnable最初是用来设计做一些长期运行的任务；而Callable是为单一的重复的执行任务设计的。
 * Future 是一个执行结果，可以对异步执行的任务的状态、结果进行判断。  
-
 * RunnableFuture 继承了Runnable与Future，可以理解为Runnable没有返回值，通过继承的方式，拓展了runnable的future能力!  
 
 ![RuunableFuture](S:/workspace/ideaworkspace/demos/demo-threadpool/src/main/resources/RunnableFuture.jpg)  

@@ -85,6 +85,14 @@ Thread类的实例方法。调用此方法，
 
 #### 五、#Object wait()、notify()、notifyall()
 
+首先，wait方法和notify方法必须是在sychronized同步块之内调用；
+
+其次，调用这三个方法的线程必须持有对象的锁；换句话说，只能调用synchronized锁的那个对象的相关方法。
+
+上面两个条件任何一个不满足，都会直接抛出一个unchecked异常 IllegalMonitorStateException。
+
+
+
 某线程A调用某对象B的wait()方法时，会使这个线程进入等待状态，直到发生以下情况中的一种：
 
 - 其他线程调用这个对象B的notify()方法，且线程A正好被选择为被唤醒的那个线程（可能有多个线程在等待对象B）
@@ -92,7 +100,42 @@ Thread类的实例方法。调用此方法，
 - 其他线程调用线程A的interrupt方法，线程A收到InterruptException异常。
 - 线程A调用wait方法时传入时间参数，指定时长过去后，线程恢复执行。如果不传入参数，则线程A永远等待
 
+当等待线程被唤醒后，不是立刻就继续执行的，而是等待唤醒他的线程退出sync同步块，然后被唤醒的线程再次竞争对象锁，获得锁的线程才会继续执行。
+
 >  而且需要注意的是，**除非是明确的知道只有一个等待线程，否则应该使用notify all**，否则，就可能出现某个线程等待的时间过长，或者永远等下去的几率。
+
+
+
+注意，线程有可能会伪唤醒，即不明的原因导致线程唤醒，但是如果预期的条件还不具备，可能会导致异常的执行结果，所以应该使用循环等待的方式：
+
+```java
+public class MyWaitNotify3{
+
+  MonitorObject myMonitorObject = new MonitorObject();
+  boolean wasSignalled = false;
+
+  public void doWait(){
+    synchronized(myMonitorObject){
+      while(!wasSignalled){  //循环等待条件
+        try{
+          myMonitorObject.wait();
+         } catch(InterruptedException e){...}
+      }
+      //clear signal and continue running.
+      wasSignalled = false;
+    }
+  }
+
+  public void doNotify(){
+    synchronized(myMonitorObject){
+      wasSignalled = true;
+      myMonitorObject.notify();
+    }
+  }
+}
+```
+
+
 
 #### 六、拓展：监视器流程
 
@@ -119,12 +162,20 @@ Thread类的实例方法。调用此方法，
 volatile关键字有两层含义：
 
 1. 第一层含义：保证多线程之间同一个变量的内存可见性、一致性。底层原理可拓展至JMM内存模型、cpu底层多核之间有的L1 L2 L3 cache与主存
-2. 第一层含义：防止指令的重排序，因为cpu在针对一些耗时指令时有可能做乱序执行。
 
-**volatile 与 synchronized区别：**
+   * 如果线程A写入了一个`volatile`变量，而线程B随后又读取了同一个易失性变量，那么线程A在写入该易失性变量之前可见的所有变量，在线程B读取了该易失性变量之后也将可见。
 
-- **volatile只保证线程之间的可见性，一致性，不保证原子性。**
-- **synchronized 即保证了原子性，也保证了可见性。**
+   * 如果线程A读取一个`volatile`变量，那么线程A在读取该`volatile`变量后该线程可见的所有变量也将从主存中重新读取。
+
+2. 第二层含义：防止指令的重排序，因为cpu在针对一些耗时指令时有可能做乱序执行。
+
+   
+
+#### **八、volatile 与 synchronized区别：**
+
+- volatile只保证线程之间的可见性，最终一致性，不保证原子性。
+- synchronized 即保证了原子性，也保证了可见性；sync代码块同一时间只会有一个线程进入
+- 两者都会建立内存屏障，防止cpu的指令重排序。
 - volatile关键字只是用来修饰变量，并且保证变量的可见性；synchronized关键字只是用来修饰方法和代码块，并且保证里面的所有操作是原子性和可见性的。
 
 ### 二、JUC对并发的支持
@@ -373,7 +424,7 @@ public boolean isBroken()
 
    
 
-**Semaphore（信号）**
+##### **Semaphore（信号）**
 
 内部维护了一个许可集合，线程可以申请1或n个许可，如果许可数量不足则阻塞线程，用完需要归还许可。可以用来控制同时访问的线程个数。也支持 fair 与 non-fair两种模式（FIFO）
 
@@ -400,6 +451,14 @@ public void release();
 //归还多个许可
 public void release(int number);
 ```
+
+
+
+##### Exchanger
+
+可以用来两个线程之间交换对象！
+
+
 
 
 
@@ -470,3 +529,31 @@ public void release(int number);
 #### 七、自旋锁
 
 在Java中，自旋锁是指尝试获取锁的线程不会立即阻塞，而是采用循环的方式去尝试获取锁，好处是减少线程上下文切换的消耗，缺点是循环会消耗CPU。
+
+
+
+### 四、总结
+
+#### 1、线程同步方式如何选择？
+
+Java语言通过语法提供了volatile与synchronized关键字来保证了变量的多线程可见性与操作的原子性，但是sync关键字其实是有一些限制的，那么在sync关键字与juc提供的辅助类之间该如何选择呢？
+
+* sync 代码块只允许一个线程进入，如果需要多个线程同时进入，并且需要精确控制线程的最大量，可以使用Semaphore。
+* sync 代码块在请求锁的时候是无法被中断的，juc的辅助包中大多提供了 tryLock，立即返回是否获得锁，或等待固定时间再返回的方式。
+* sync 代码块不能保证多个请求锁的线程的先后执行顺序，可能会导致线程饥饿现象的产生；如果需要保证线程的先后执行顺序，可以使用锁的Fair模式。
+* sync 代码块只能作用于一个方法，而Lock包可以在不同的方法内加锁，解锁。
+* 如果是一个线程在写，多个线程在读，那么仅使用volatile 就可以了，不需要任何同步机制。
+
+
+
+#### 2、线程通信的方式：
+
+* 共享变量 + 循环 busy waiting 的方式
+* 
+
+
+
+
+
+
+
