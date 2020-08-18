@@ -613,8 +613,6 @@ jdk<=1.7之前，永久代是堆内内存；但从jdk1.8起，永久区的概念
   > * 非标准命令： -X 开头，特定版本HotSpot支持
   > * 不稳定命令：-XX开头，下个版本可能会取消
 
-
-
 ##### 2.一些常用的参数：
 
 | 参数                            | 解释：                                                       |
@@ -701,3 +699,10 @@ Exception in thread "main" java.lang.OutOfMemoryError: Java heap space
 
 
 同时：阅读String.intern方法可知：String的常量池是由String类单独维护的。
+
+##### 2.Java有几种引用类型
+
+* 强引用  =赋值的都是强引用,内存不够时,也不会被垃圾回收
+* 软引用  SoftReference  垃圾回收时,如果内存不足,会被释放
+* 弱引用  WearReference 垃圾回收时,不论是否被引用,都会被释放
+* 虚引用   记不清了...

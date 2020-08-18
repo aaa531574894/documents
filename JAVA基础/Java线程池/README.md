@@ -59,6 +59,14 @@ ExecutorService中的 submit() 的各个重载方法底层都是通过其execute
 * FutureTask是RunnableFuture的实现类。提供了任务启动，取消，获取执行结果的能力。它可以接收Ruunable，Callable对象；如果是Ruunable对象，会封装为一个返回值为Void类型的callable对象。
   ThreadPoolExecutor内部的submit() 方法将传入的参数都封装为了FutureTask对象，然后再调用execute方法去执行。
 
+#### 5.CompletionService
+
+传统的线程池submit任务后会得到一个Future对象，向线程池中添加任务后，返回的Future List无法判断哪个已经执行完毕，可以继续做下一步操作。JDK1.8引入了CompletionService接口，并提供了一个默认实现类ExecutorCompletionService，提供一个构造函数接口Executor对象，内部维护了一个无界阻塞队列，可以通过其poll（非阻塞） take（阻塞） 方法来获取执行完毕的Futue，做下一部处理。
+
+
+
+
+
 
 
 #### 附：线程池脑图
