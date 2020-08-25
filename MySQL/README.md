@@ -529,7 +529,7 @@ MySQL在底层存储数据时，支持不同的存储方式，底层实现与相
 * CSV     以csv格式进行存储，不支持事务，但可以直接以csv文件的格式进行编辑，适合作为数据交换的中间表。
 * InnoDB   最常用的引擎，对锁，事务有很好的支持，理解为一个传统的关系型数据库。
 
-<<<<<<< HEAD
+
 ### 九、MySQL特殊关键字
 
 #### 1.Limit
@@ -585,7 +585,100 @@ mysql -uroot -p123456 <employees.sql
 数据就导入进你的测试库啦!
 
 
-### 九、主从复制
+### 十一、主从复制
 
 MySQL也支持主从复制，类似于redis，一提到主从复制，那么就会有数据不一致性问题，同样的，Mysql的主从复制也并没有完美的解决数据不一致性的问题，因为主从复制终究是要有通信时延的。需要知道的是，主从复制的目的是为了什么，是为了读写分离。提高读的性能，在考虑是否要使用主从复制时，要根据业务情况来，如果可以忍受一点点的数据不一致性，就可以读写分析；但类似于银行以及金融系统，那就还是老老实实的串行化执行吧。
->>>>>>> 59cc513... 主从复制思考
+
+
+
+或者在读时，强制读取主库，在开启事务操作后，select语句都是读取主库的。
+
+
+
+
+
+### 十二、悲观、乐观锁
+
+[参考文章](https://www.jianshu.com/p/ed896335b3b4)
+
+**悲观锁**
+
+悲观锁假定不同事物之间的处理一定会出现相互干扰，从而需要在一个事务从头到尾的过程中都对数据进行加锁处理。
+
+mysql中如何使用悲观锁：
+
+* 关闭自动提交属性。
+
+* 通过select for   update 对记录加独享锁
+* 执行其他业务逻辑..........
+* do update
+* do commit；
+
+eg：
+
+```java
+//step0: 关闭事务自动提交属性
+//step1: 查出商品状态
+select quantity from items where id=100 for update;
+//step2: 根据商品信息生成订单
+insert into orders(id,item_id) values(null,100);
+//step3: 修改商品的库存
+update Items set quantity=quantity-2 where id=100;
+//step 4: 提交事务
+```
+
+> 拓展思考:
+>
+> 需要注意的是，当我执行select quantity from items where id=100 for update后。如果我是在第二个事务中执行select quantity from items where id=100（不带for update）仍能正常查询出数据，不会受第一个事务的影响。另外，MySQL还有个问题是select...for update语句执行中所有扫描过的行都会被锁上，因此在MySQL中用**悲观锁务必须确定走了索引，而不是全表扫描，否则将会将整个数据表锁住**。
+>
+>  
+>
+> Oracle中，也存在select ... for update，和mysql一样，但是Oracle还存在了**select ... for update nowait**，即发现被锁后不等待，立刻报错。
+
+
+
+但是，收到fail-fast思路的启发，在高并发架构中已经很少使用悲观锁了。
+
+
+
+**乐观锁**
+
+而乐观锁则正好相反，它假定多个事务在处理过程中不会互相影响彼此，乐观锁相对悲观锁而言，它认为数据一般情况下不会造成冲突，所以在数据进行提交更新的时候，才会正式对数据的冲突与否进行检测，如果发现冲突了，则让返回错误信息，让用户决定如何去做。
+
+**数据库中的表现**
+
+利用数据版本号（version）机制是乐观锁最常用的一种实现方式。一般步骤为
+
+* 数据库表增加一个数字类型的 “version” 字段，当读取数据时，将version字段的值一同读出，数据每更新一次，对此version值+1
+* 当我们提交更新的时候，判断数据库表对应记录的当前版本信息与第一次取出来的version值进行比对
+* 如果数据库表当前版本号与第一次取出来的version值相等，则予以更新，否则认为是过期数据，返回更新失败。 
+
+举个例子:
+
+```sql
+---step0: 开启事务
+---step1: 查询出商品信息
+select (quantity,version) from items where id=100;
+---step2: 根据商品信息生成订单
+insert into orders(id,item_id) values(null,100);
+---step3: 修改商品的库存  通过update 影响的行数确认修改是否成功
+update items set quantity=quantity-1,version=version+1 where id=100 and version=#{version};
+---step4: 通过update 影响的行数确认修改是否成功  选择是否进行事务回滚
+```
+
+但是上面这套sql有一个缺点，那就是同一时刻多个事务中只可能有一个事务扣减库存成功。
+
+所以在乐观锁的使用过程中我们应该做一些锁粒度的控制，看下面这个例子：
+
+```sql
+---step0 挑选以库存数作为乐观锁
+---step1:查询出商品信息
+select (inventory) from items where id=100;
+---step2: 根据商品信息生成订单
+insert into orders(id,item_id) values(null,100);
+---step3: 修改商品的库存
+update items set inventory=inventory-1 where id=100 and inventory-1>0;  ---将原子操作交给数据库来做。
+---step4：提交事务
+```
+
+没错！你参加过的天猫、淘宝秒杀、聚划算，跑的就是这条SQL，通过挑选乐观锁，可以减小锁力度，从而提升吞吐～
