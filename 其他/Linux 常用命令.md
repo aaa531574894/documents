@@ -69,6 +69,32 @@ eg：
 30 6 * * 0 Command                      指定每星期日的6:30执行一次命令 
 ```
 
+#### dirname
+
+返回指定资源（文件或文件夹）所在的文件夹路径
+
+eg:
+
+```bash
+dirname /Users/yifeiliu/project/wework/mx-local/config
+#输出 /Users/yifeiliu/project/wework/mx-local
+```
+
+
+
+#### basename
+
+返回指定资源（文件或文件夹）的文件名称
+
+eg：
+
+```bash
+basename /Users/yifeiliu/project/wework/mx-local/config/test.sh
+# test.sh
+basename /Users/yifeiliu/project/wework/mx-local/config
+# config
+```
+
 
 
 #### find
